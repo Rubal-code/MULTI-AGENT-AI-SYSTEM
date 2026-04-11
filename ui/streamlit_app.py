@@ -1,5 +1,6 @@
 import streamlit as st
 import uuid
+import time
 
 from app.core.orchestrator import multi_agent_system
 from app.core.database import save_chat,get_chats,get_all_sessions
@@ -41,10 +42,17 @@ user_input = st.chat_input("Ask something...")
 
 if user_input:
     st.chat_message("user").write(user_input)
-    result = multi_agent_system(user_input)
+    with st.spinner("Thinking...🤔"):
+        result = multi_agent_system(user_input,chat_history)
 
     final_response=f"**RESEARCH**\n{result['research']}\n\n**SUMMARY**\n{result['summary']}\n\n**PLAN**\n{result['plan']}"
-    st.chat_message("assistant").write(final_response)
+    # st.chat_message("assistant").write(final_response)
+    response_placeholder = st.chat_message("assistant").empty()
+    full_text=""
+    for chunk in final_response.split():
+        full_text+=chunk+" "
+        response_placeholder.markdown(full_text)
+        time.sleep(0.07)  # Simulate typing delay
     save_chat(st.session_state.session_id, user_input,final_response)
 
 
