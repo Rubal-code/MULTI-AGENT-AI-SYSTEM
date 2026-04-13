@@ -38,6 +38,13 @@ def get_all_sessions():
     """)
     return cursor.fetchall()
 
+def delete_chat(session_id):
+    cursor.execute(
+        "DELETE FROM chats WHERE session_id=?",
+        (session_id,)
+    )
+    conn.commit()
+
 def rename_chat(session_id, new_title):
     cursor.execute(
         "UPDATE chats SET title=? WHERE session_id=?",

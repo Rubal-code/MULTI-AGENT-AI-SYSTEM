@@ -4,6 +4,27 @@ from app.core.llm import get_llm
 
 llm = get_llm()
 
+def generate_title(user_input):
+    prompt = f"""
+    Generate a short chat title (max 4 words).
+
+    STRICT RULES:
+    - Only return the title
+    - No punctuation
+    - No extra words
+
+    Input:
+    {user_input}
+    """
+
+    title = llm.invoke(prompt).content.strip()
+    title = title.replace("Title:", "").strip()
+    title = title.replace('"', '').strip()
+    title = title.split("\n")[0]
+
+    return title[:40]
+
+
 def detect_intent(query):
     query = query.lower()
 
@@ -11,17 +32,11 @@ def detect_intent(query):
         return "comparison"
     elif "plan" in query or "roadmap" in query:
         return "plan"
-    elif "brief" in query or "short" in query:
-        return "short"
-    elif query.startswith(("what is", "who is", "define")):
-        return "fact"
     else:
         return "normal"
 
 
-def multi_agent_system(query, chat_history=None):
-
-    intent = detect_intent(query)
+def multi_agent_system(query, chat_history=None, mode="normal"):
 
     context = ""
     if chat_history:
@@ -32,17 +47,24 @@ def multi_agent_system(query, chat_history=None):
 
     research = research_agent(full_query).content
 
+    intent = detect_intent(query)
+
     if intent == "plan":
         final = planner_agent(research).content
+
     else:
         prompt = f"""
-        Answer the user's question directly.
+        Answer the user's question.
 
-        STRICT RULES:
+        STYLE:
+        - Mode: {mode}
+
+        RULES:
+        - If mode is short → answer in 2-3 lines
+        - If mode is detailed → explain properly
+        - If mode is normal → balanced answer
+        - Do NOT include study plan unless asked
         - Do NOT ask follow-up questions
-        - Do NOT act confused
-        - Do NOT include study plan
-        - Keep answer concise
 
         Question:
         {query}
@@ -50,6 +72,7 @@ def multi_agent_system(query, chat_history=None):
         Context:
         {research}
         """
+
         final = llm.invoke(prompt).content
 
     return {"response": final}
