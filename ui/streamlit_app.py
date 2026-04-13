@@ -1,59 +1,79 @@
 import streamlit as st
-import uuid
+import uuid # For generating unique session IDs
 import time
 
 from app.core.orchestrator import multi_agent_system
-from app.core.database import save_chat,get_chats,get_all_sessions
+from app.core.database import save_chat, get_chats, get_all_sessions
 
-# import sys
-# import os
 
-# # Add project root to path
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+st.set_page_config(page_title="Multi-Agent AI", layout="wide")
 
-st.set_page_config(page_title="Multi-Agent-AI-System",page_icon=":robot_face:",layout="wide")
+# ---------------- SIDEBAR ---------------- #
+with st.sidebar:
+    st.title("💬 Chat Sessions")
 
-# title
-st.title("🤖 Multi-Agent AI Assistant")
-# sidebar
-st.sidebar.title("💬 Chat Sessions")
+    if "session_id" not in st.session_state:
+        st.session_state.session_id = str(uuid.uuid4())
 
-if "session_id" not in st.session_state:
-    st.session_state.session_id=str(uuid.uuid4())
+    if st.button("➕ New Chat"):
+        st.session_state.session_id = str(uuid.uuid4())
 
-if st.sidebar.button("➕ New Chat"):
-    st.session_state.session_id=str(uuid.uuid4())
+    sessions = get_all_sessions()
 
-sessions=get_all_sessions()
+    for s in sessions:
+        if st.button(s[:8]):
+            st.session_state.session_id = s
 
-for s in sessions:
-    if st.sidebar.button(s[:8]):
-        st.session_state.session_id=s
+# ---------------- MAIN UI ---------------- #
+st.markdown(
+    """
+    <h1 style='text-align: center;'>🤖 Multi-Agent AI Assistant</h1>
+    """,
+    unsafe_allow_html=True
+)
+
+# Chat container
+chat_container = st.container()
 
 # Load chat history
 chat_history = get_chats(st.session_state.session_id)
 
-for user,bot in chat_history:
-    st.chat_message("user").write(user)
-    st.chat_message("assistant").write(bot)
+with chat_container:
+    for user, bot in chat_history:
+        with st.chat_message("user"):
+            st.markdown(user)
 
-# Input
+        with st.chat_message("assistant"):
+            st.markdown(bot)
+
+# ---------------- INPUT BOX ---------------- #
+st.markdown("---")
+
 user_input = st.chat_input("Ask something...")
 
 if user_input:
-    st.chat_message("user").write(user_input)
-    with st.spinner("Thinking...🤔"):
-        result = multi_agent_system(user_input,chat_history)
+    with st.chat_message("user"):
+        st.markdown(user_input)
 
-    final_response=f"**RESEARCH**\n{result['research']}\n\n**SUMMARY**\n{result['summary']}\n\n**PLAN**\n{result['plan']}"
-    # st.chat_message("assistant").write(final_response)
-    response_placeholder = st.chat_message("assistant").empty()
-    full_text=""
-    for chunk in final_response.split():
-        full_text+=chunk+" "
-        response_placeholder.markdown(full_text)
-        time.sleep(0.07)  # Simulate typing delay
-    save_chat(st.session_state.session_id, user_input,final_response)
+    with st.spinner("Thinking... 🤔"):
+        result = multi_agent_system(user_input, chat_history)
 
+    final_response = f"""
+### 📘 Summary:
+{result['summary']}
 
-# multi agent ai system to           python -m streamlit run ui/streamlit_app.py
+### 🧠 Plan:
+{result['plan']}
+"""
+
+    # 🔥 Streaming effect
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        full_text = ""
+
+        for word in final_response.split():
+            full_text += word + " "
+            message_placeholder.markdown(full_text)
+            time.sleep(0.03)
+
+    save_chat(st.session_state.session_id, user_input, final_response)
