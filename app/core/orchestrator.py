@@ -92,12 +92,12 @@
 from app.core.graph import build_graph
 from app.core.llm import get_llm
 
-# 🔥 Initialize
+#  Initialize
 llm = get_llm()
 graph = build_graph()
 
 
-# 🔥 Auto Title Generator (REQUIRED for UI)
+#  Auto Title Generator (REQUIRED for UI)
 def generate_title(user_input):
     prompt = f"""
     Generate a short chat title (max 4 words).
@@ -124,9 +124,16 @@ def generate_title(user_input):
 #  MAIN MULTI-AGENT SYSTEM (LANGGRAPH)
 def multi_agent_system(query, chat_history=None, mode="normal"):
 
-    # 🧠 Prepare state
+    # Prepare state
+    context = ""
+
+    if chat_history:
+        for user, bot in chat_history:
+            context += f"User: {user}\nAssistant: {bot}\n"
+
     state = {
-        "query": query
+        "query": context + "\nUser: " + query,
+        "mode":mode
     }
 
     #  Run graph
@@ -134,5 +141,5 @@ def multi_agent_system(query, chat_history=None, mode="normal"):
 
     #  Safe return (no crash)
     return {
-        "response": result.get("result", "No response generated")
+        "response": result.get("final", "No response generated")
     }
