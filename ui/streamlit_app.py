@@ -17,7 +17,6 @@ if "chat_title" not in st.session_state:
 if "editing_chat" not in st.session_state:
     st.session_state.editing_chat = None
 
-# 🧠 MEMORY MODE (separate from widget)
 if "memory_mode" not in st.session_state:
     st.session_state.memory_mode = "normal"
 
@@ -27,19 +26,19 @@ with st.sidebar:
 
     search_query = st.text_input("🔍 Search chats")
 
-    # 🎛️ Mode selector (no key to avoid conflict)
     mode_selected = st.selectbox(
         "Response Mode",
         ["normal", "short", "detailed"]
     )
 
-    st.write(f"🧠 Memory Mode: {st.session_state.memory_mode}")
+    st.write(f"🧠 Memory Mode: **{st.session_state.memory_mode}**")
 
     if st.button("➕ New Chat"):
         st.session_state.session_id = str(uuid.uuid4())
         st.session_state.chat_title = "New Chat"
         st.session_state.editing_chat = None
         st.session_state.memory_mode = "normal"
+        st.rerun()
 
     sessions = get_all_sessions()
 
@@ -55,6 +54,7 @@ with st.sidebar:
                 st.session_state.session_id = session_id
                 st.session_state.chat_title = title_display
                 st.session_state.editing_chat = None
+                st.rerun()
 
             # Rename
             if col2.button("✏️", key=f"edit_{session_id}"):
@@ -82,7 +82,10 @@ with st.sidebar:
                         st.rerun()
 
 # ---------------- MAIN ---------------- #
-st.markdown("<h1 style='text-align:center;'>🤖 Multi-Agent AI Assistant</h1>", unsafe_allow_html=True)
+st.markdown(
+    "<h1 style='text-align:center;'>🤖 Multi-Agent AI Assistant</h1>",
+    unsafe_allow_html=True
+)
 
 chat_history = get_chats(st.session_state.session_id)
 
@@ -97,24 +100,29 @@ user_input = st.chat_input("Ask something...")
 
 if user_input:
 
-    # 🧠 Detect user preference (memory update)
+    #  Update memory mode from user behavior
     if "short" in user_input.lower():
         st.session_state.memory_mode = "short"
 
     elif "detail" in user_input.lower() or "explain more" in user_input.lower():
         st.session_state.memory_mode = "detailed"
 
-    # 🎯 Decide final mode (UI overrides memory)
-    final_mode = mode_selected if mode_selected != "normal" else st.session_state.memory_mode
+    #  Decide final mode
+    final_mode = (
+        mode_selected if mode_selected != "normal"
+        else st.session_state.memory_mode
+    )
 
-    # 🤖 Auto title
+    #  Auto title
     if st.session_state.chat_title == "New Chat":
         with st.spinner("Generating title..."):
             st.session_state.chat_title = generate_title(user_input)
 
+    # Show user msg
     with st.chat_message("user"):
         st.markdown(user_input)
 
+    #  AI call
     with st.spinner("Thinking... 🤔"):
         result = multi_agent_system(
             user_input,
@@ -122,17 +130,24 @@ if user_input:
             final_mode
         )
 
-    final_response = result["response"]
+    final_response = result.get("response", "No response")
+    agent_used = result.get("agent", "")
 
-    # 🔥 Streaming effect
+    #  Streaming response
     with st.chat_message("assistant"):
         placeholder = st.empty()
         full_text = ""
+
         for word in final_response.split():
             full_text += word + " "
             placeholder.markdown(full_text)
             time.sleep(0.02)
 
+        #  SHOW AGENT USED
+        if agent_used:
+            st.markdown(f"🧠 **Agent Used:** `{agent_used}`")
+
+    #  Save chat
     save_chat(
         st.session_state.session_id,
         st.session_state.chat_title,
