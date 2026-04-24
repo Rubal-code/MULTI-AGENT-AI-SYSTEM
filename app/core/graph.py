@@ -4,6 +4,9 @@ from typing import TypedDict
 from app.agents.research_agent import research_agent
 from app.agents.planner_agent import planner_agent
 from app.agents.summarizer_agent import summarizer_agent
+from app.core.llm import get_llm
+
+llm = get_llm()
 
 
 # ================= STATE ================= #
@@ -18,11 +21,8 @@ class AgentState(TypedDict):
 
 # ================= NODES ================= #
 
-# 🔍 Research Node
 def research_node(state: AgentState):
-
     full_query = state.get("context", "") + "\nUser: " + state["query"]
-
     result = research_agent(full_query)
 
     return {
@@ -32,7 +32,6 @@ def research_node(state: AgentState):
     }
 
 
-# 🧠 Planner Node
 def planner_node(state: AgentState):
     result = planner_agent(state["research"])
 
@@ -43,9 +42,7 @@ def planner_node(state: AgentState):
     }
 
 
-# ✂️ Summarizer Node
 def summarizer_node(state: AgentState):
-
     mode = state.get("mode", "short")
     style = "brief" if mode == "short" else "detailed"
 
@@ -58,35 +55,75 @@ def summarizer_node(state: AgentState):
     }
 
 
-# 🧠 Router (FIXED)
-def router(state: AgentState):
+# 🔥 Parallel (FIXED)
+def parallel_node(state: AgentState):
 
-    query = state["query"].lower()
-    mode = state.get("mode", "normal")
+    summary = summarizer_agent(state["research"], "detailed")
+    plan = planner_agent(state["research"])
 
-    if "plan" in query or "roadmap" in query:
+    combined = f"""
+📘 **Concept Explanation**
+{summary.content}
+
+---
+
+🧠 **Complete Roadmap**
+{plan.content}
+"""
+
+    return {
+        **state,
+        "final": combined,
+        "agent_used": state.get("agent_used", "") + " -> summarizer + planner"
+    }
+
+
+# 🔥 SMART ROUTER
+def llm_router(state: AgentState):
+
+    query = state["query"]
+
+    prompt = f"""
+    Classify the user query:
+
+    planner → roadmap, steps, learning plan
+    summarizer → short/brief/simple explanation
+    parallel → full explanation + roadmap
+    final → normal explanation
+
+    RULE:
+    - Output only ONE word
+
+    Query:
+    {query}
+    """
+
+    decision = llm.invoke(prompt).content.strip().lower()
+
+    if "planner" in decision:
         return "planner"
-
-    elif mode == "short" or "brief" in query:
+    elif "summarizer" in decision:
         return "summarizer"
-
+    elif "parallel" in decision:
+        return "parallel"
     else:
         return "final"
 
 
-# 🎯 Final Node
+#  FINAL NODE (NO TRUNCATION BUG)
 def final_node(state: AgentState):
 
-    # Keep existing output if present
-    if state.get("final"):
-        final_output = state["final"]
-    else:
-        final_output = state.get("research", "")
+    final_output = state.get("final", state.get("research", ""))
 
     mode = state.get("mode", "normal")
 
-    if mode == "short":
-        final_output = final_output[:200]
+    #  DO NOT CUT roadmap outputs
+    if mode == "short" and state.get("research"):
+        summary = summarizer_agent(state["research"], "brief").content
+    
+        # limit words instead of characters
+        words = summary.split()
+        final_output = " ".join(words[:40])
 
     return {
         **state,
@@ -95,7 +132,7 @@ def final_node(state: AgentState):
     }
 
 
-# ================= BUILD GRAPH ================= #
+# ================= BUILD ================= #
 
 def build_graph():
 
@@ -104,22 +141,25 @@ def build_graph():
     builder.add_node("research", research_node)
     builder.add_node("planner", planner_node)
     builder.add_node("summarizer", summarizer_node)
+    builder.add_node("parallel", parallel_node)
     builder.add_node("final", final_node)
 
     builder.set_entry_point("research")
 
     builder.add_conditional_edges(
         "research",
-        router,
+        llm_router,
         {
             "planner": "planner",
             "summarizer": "summarizer",
+            "parallel": "parallel",
             "final": "final"
         }
     )
 
     builder.add_edge("planner", "final")
     builder.add_edge("summarizer", "final")
+    builder.add_edge("parallel", "final")
     builder.add_edge("final", END)
 
     return builder.compile()

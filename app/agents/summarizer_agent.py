@@ -1,19 +1,22 @@
 from app.core.llm import get_llm
-
 llm = get_llm()
 
-def summarizer_agent(text, user_query):
-    prompt = f"""
-    User asked: {user_query}
+def summarizer_agent(text, style="brief"):
 
-    Based on the above request, respond appropriately:
+    if style == "brief":
+        prompt = f"""
+        Summarize this in 2-3 lines in simple language.
 
-    - If user asks for brief/short → give concise answer
-    - If user asks for detailed → give detailed explanation
-    - If unclear → give balanced response
+        {text}
+        """
+    else:
+        prompt = f"""
+        Explain clearly:
+        - Definition
+        - Key points
+        - Example
 
-    Content:
-    {text}
-    """
-    
+        {text}
+        """
+
     return llm.invoke(prompt)
