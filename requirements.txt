@@ -6,3 +6,4 @@ langchain-groq==0.1.4
 langgraph==0.0.55
 python-dotenv==1.0.1
 groq
+# trigger rebuild
