@@ -1,14 +1,18 @@
+import sys
+import os
+
+#  FORCE ROOT PATH
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, ROOT_DIR)
+
+
 import streamlit as st
 import uuid
 import time
 
 from app.core.orchestrator import multi_agent_system, generate_title
 from app.core.database import save_chat, get_chats, get_all_sessions, rename_chat, delete_chat
-import sys
-import os
 
-#  FIX IMPORT PATH FOR STREAMLIT CLOUD
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 st.set_page_config(page_title="Multi-Agent AI", layout="wide")
 
