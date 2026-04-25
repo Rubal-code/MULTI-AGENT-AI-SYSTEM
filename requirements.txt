@@ -6,3 +6,7 @@ groq
 fastapi
 uvicorn
 python-dotenv
+streamlit
+langchain-community
+langchain-core
+langchain-groq
