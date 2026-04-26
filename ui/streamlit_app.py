@@ -31,7 +31,7 @@ if st.session_state.user is None:
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
 
-    col1, col2 = st.columns(2)
+    col1, col2 ,col3= st.columns(3)
 
     # LOGIN
     with col1:
@@ -45,7 +45,7 @@ if st.session_state.user is None:
                 st.error("Invalid email or password")
 
     # SIGNUP
-    with col2:
+    with col3:
         if st.button("Signup"):
             try:
                 auth.create_user_with_email_and_password(email, password)
