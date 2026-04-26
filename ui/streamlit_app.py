@@ -36,13 +36,23 @@ if st.session_state.user is None:
     # LOGIN
     with col1:
         if st.button("Login"):
-            try:
-                user = auth.sign_in_with_email_and_password(email, password)
-                st.session_state.user = user
-                st.success("Logged in successfully")
-                st.rerun()
-            except:
-                st.error("Invalid email or password")
+            if not email or not password:
+                st.warning("Enter email and password")
+            else:
+                try:
+                    user = auth.sign_in_with_email_and_password(email, password)
+
+                    #  STORE USER PROPERLY
+                    st.session_state.user = user
+
+                    #  FORCE CLEAN STATE BEFORE RERUN
+                    st.session_state["login_success"] = True
+
+                    st.rerun()
+
+                except Exception as e:
+                    st.error("Invalid email or password")   
+
 
     # SIGNUP
     with col7:
@@ -52,11 +62,13 @@ if st.session_state.user is None:
                 st.success("Account created! Please login.")
             except:
                 st.error("Signup failed")
-
+    if st.session_state.login_success:
+        st.success("Logged in successfully")
+        st.session_state.login_success = False
     st.stop()
 
 
-# ✅ REAL USER ID
+#  REAL USER ID
 user_id = st.session_state.user["localId"]
 
 
