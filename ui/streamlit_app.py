@@ -1,9 +1,11 @@
 import sys
 import os
 
+# ---------------- PATH FIX ---------------- #
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT_DIR)
 
+# ---------------- IMPORTS ---------------- #
 import streamlit as st
 import uuid
 import time
@@ -13,15 +15,23 @@ from app.core.orchestrator import multi_agent_system, generate_title
 from app.core.database import save_chat, get_chats, get_all_sessions, rename_chat, delete_chat
 
 
+# ---------------- PAGE CONFIG (MUST BE FIRST) ---------------- #
+st.set_page_config(page_title="Multi-Agent AI", layout="wide")
+
+
 # ---------------- FIREBASE AUTH ---------------- #
 firebase_config = dict(st.secrets["firebase_web"])
-
 firebase = pyrebase.initialize_app(firebase_config)
 auth = firebase.auth()
 
-# Session
+
+# ---------------- SESSION INIT ---------------- #
 if "user" not in st.session_state:
     st.session_state.user = None
+
+if "login_success" not in st.session_state:
+    st.session_state.login_success = False
+
 
 # ---------------- LOGIN UI ---------------- #
 if st.session_state.user is None:
@@ -31,7 +41,7 @@ if st.session_state.user is None:
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
 
-    col1, col2 ,col3 ,col4,col5,col6,col7= st.columns(7)
+    col1, col2 = st.columns(2)
 
     # LOGIN
     with col1:
@@ -41,34 +51,33 @@ if st.session_state.user is None:
             else:
                 try:
                     user = auth.sign_in_with_email_and_password(email, password)
-
-                    #  STORE USER PROPERLY
                     st.session_state.user = user
-
-                    #  FORCE CLEAN STATE BEFORE RERUN
-                    st.session_state["login_success"] = True
-
+                    st.session_state.login_success = True
                     st.rerun()
-
-                except Exception as e:
-                    st.error("Invalid email or password")   
-
+                except Exception:
+                    st.error("Invalid email or password")
 
     # SIGNUP
-    with col7:
+    with col2:
         if st.button("Signup"):
-            try:
-                auth.create_user_with_email_and_password(email, password)
-                st.success("Account created! Please login.")
-            except:
-                st.error("Signup failed")
+            if not email or not password:
+                st.warning("Enter email and password")
+            else:
+                try:
+                    auth.create_user_with_email_and_password(email, password)
+                    st.success("Account created! Please login.")
+                except Exception:
+                    st.error("Signup failed")
+
+    # SUCCESS MESSAGE AFTER RERUN
     if st.session_state.login_success:
         st.success("Logged in successfully")
         st.session_state.login_success = False
+
     st.stop()
 
 
-#  REAL USER ID
+# ---------------- USER ID ---------------- #
 user_id = st.session_state.user["localId"]
 
 
@@ -77,10 +86,6 @@ with st.sidebar:
     if st.button("🚪 Logout"):
         st.session_state.user = None
         st.rerun()
-
-
-# ---------------- PAGE CONFIG ---------------- #
-st.set_page_config(page_title="Multi-Agent AI", layout="wide")
 
 
 # ---------------- SESSION ---------------- #
@@ -96,8 +101,7 @@ if "editing_chat" not in st.session_state:
 
 # ---------------- SIDEBAR ---------------- #
 with st.sidebar:
-    st.title(f"💬 Chats")
-
+    st.title("💬 Chats")
     st.write(f"👤 {st.session_state.user['email']}")
 
     search_query = st.text_input("🔍 Search chats")
@@ -120,7 +124,7 @@ with st.sidebar:
 
         if search_query.lower() in title_display.lower():
 
-            col1, col2, col3 = st.columns([3,1,1])
+            col1, col2, col3 = st.columns([3, 1, 1])
 
             # OPEN CHAT
             if col1.button(title_display, key=session_id):
@@ -177,7 +181,6 @@ if user_input:
 
     final_mode = temp_mode if temp_mode else mode_selected
 
-    # Generate title
     if st.session_state.chat_title == "New Chat":
         st.session_state.chat_title = generate_title(user_input)
 
