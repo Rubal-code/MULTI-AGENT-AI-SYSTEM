@@ -19,113 +19,126 @@ st.set_page_config(page_title="Multi-Agent AI", layout="wide")
 st.markdown("""
 <style>
 
-/* ── Global ── */
-.stApp {
-    background: #0f172a !important;
-}
+/* ── Global background ── */
+.stApp { background: #0f172a !important; }
 header[data-testid="stHeader"], footer { display: none !important; }
 
-/* ── Make the CENTER column the card ──
-   Target: 2nd column inside the horizontal block on the auth page */
-div[data-testid="stHorizontalBlock"]
+/* ── Card: style the CENTER column's inner block directly ──
+   Very specific path to avoid matching nested columns            */
+section[data-testid="stMain"]
+  > div
+  > div[data-testid="stVerticalBlock"]
+  > div[data-testid="stHorizontalBlock"]
   > div[data-testid="stColumn"]:nth-child(2)
   > div[data-testid="stVerticalBlock"] {
-    background: #1e293b;
-    border: 0.5px solid rgba(255, 255, 255, 0.08);
-    border-radius: 20px;
-    padding: 2.5rem 2rem 2rem 2rem !important;
-    margin-top: 60px;
+    background    : #1e293b;
+    border        : 0.5px solid rgba(255,255,255,0.08);
+    border-radius : 20px;
+    padding       : 2.5rem 2rem 2rem !important;
+    margin-top    : 50px;
 }
 
 /* ── Input labels ── */
 .stTextInput > label {
-    font-size: 11px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.07em !important;
-    text-transform: uppercase !important;
-    color: #64748b !important;
+    font-size      : 11px !important;
+    font-weight    : 600  !important;
+    letter-spacing : 0.07em !important;
+    text-transform : uppercase !important;
+    color          : #64748b !important;
 }
 
-/* ── Input boxes ── */
+/* ── Input fields ── */
 .stTextInput > div > div > input {
-    background: #0f172a !important;
-    border: 1px solid rgba(255,255,255,0.09) !important;
-    border-radius: 10px !important;
-    color: #f1f5f9 !important;
-    font-size: 14px !important;
-    padding: 11px 14px !important;
-    height: 44px !important;
+    background    : #0f172a !important;
+    border        : 1px solid rgba(255,255,255,0.09) !important;
+    border-radius : 10px !important;
+    color         : #f1f5f9 !important;
+    font-size     : 14px   !important;
+    padding       : 11px 14px !important;
+    height        : 44px !important;
 }
 .stTextInput > div > div > input:focus {
-    border-color: #6366f1 !important;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.18) !important;
+    border-color : #6366f1 !important;
+    box-shadow   : 0 0 0 3px rgba(99,102,241,0.18) !important;
 }
 
-/* ── All buttons base ── */
+/* ── Radio as pill tab-switcher ── */
+div[data-testid="stRadio"] > label { display: none !important; }
+div[data-testid="stRadio"] > div {
+    display          : flex !important;
+    gap              : 0 !important;
+    background       : #0f172a !important;
+    border           : 1px solid rgba(255,255,255,0.08) !important;
+    border-radius    : 10px !important;
+    padding          : 3px !important;
+    width            : 100% !important;
+}
+div[data-testid="stRadio"] > div > label {
+    flex             : 1 !important;
+    display          : flex !important;
+    align-items      : center !important;
+    justify-content  : center !important;
+    height           : 38px !important;
+    border-radius    : 8px !important;
+    font-size        : 14px !important;
+    font-weight      : 500 !important;
+    color            : #64748b !important;
+    cursor           : pointer !important;
+    transition       : all 0.15s ease !important;
+    margin           : 0 !important;
+}
+/* Hide the actual radio circle */
+div[data-testid="stRadio"] > div > label > div:first-child { display: none !important; }
+
+/* Active tab pill */
+div[data-testid="stRadio"] > div > label:has(input:checked) {
+    background  : #6366f1 !important;
+    color       : #ffffff !important;
+}
+
+/* ── Submit / action button ── */
 .stButton > button {
-    width: 100% !important;
-    height: 44px !important;
-    border-radius: 10px !important;
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    letter-spacing: 0.01em !important;
-    transition: all 0.15s ease !important;
+    width         : 100% !important;
+    height        : 44px !important;
+    border-radius : 10px !important;
+    font-size     : 14px !important;
+    font-weight   : 500 !important;
+    background    : #6366f1 !important;
+    color         : #ffffff !important;
+    border        : none !important;
+    transition    : background 0.15s ease !important;
 }
-
-/* Primary = active tab / submit */
-.stButton > button[kind="primary"] {
-    background: #6366f1 !important;
-    color: #ffffff !important;
-    border: none !important;
-}
-.stButton > button[kind="primary"]:hover {
-    background: #4f46e5 !important;
-}
-
-/* Secondary = inactive tab */
-.stButton > button[kind="secondary"] {
-    background: #0f172a !important;
-    color: #64748b !important;
-    border: 1px solid rgba(255,255,255,0.07) !important;
-}
-.stButton > button[kind="secondary"]:hover {
-    color: #f1f5f9 !important;
-    border-color: rgba(255,255,255,0.15) !important;
-}
-
-/* ── Alerts ── */
-div[data-testid="stAlert"] {
-    border-radius: 10px !important;
-    font-size: 13px !important;
-}
+.stButton > button:hover { background: #4f46e5 !important; }
 
 /* ── Sidebar ── */
 section[data-testid="stSidebar"] {
-    background: #1e293b !important;
-    border-right: 0.5px solid rgba(255,255,255,0.06) !important;
+    background   : #1e293b !important;
+    border-right : 0.5px solid rgba(255,255,255,0.06) !important;
 }
 section[data-testid="stSidebar"] .stButton > button {
-    background: transparent !important;
-    border: 0.5px solid rgba(255,255,255,0.07) !important;
-    color: #94a3b8 !important;
+    background : transparent !important;
+    border     : 0.5px solid rgba(255,255,255,0.07) !important;
+    color      : #94a3b8 !important;
     font-weight: 400 !important;
-    justify-content: flex-start !important;
 }
 section[data-testid="stSidebar"] .stButton > button:hover {
-    background: rgba(99,102,241,0.1) !important;
-    border-color: #6366f1 !important;
-    color: #f1f5f9 !important;
+    background   : rgba(99,102,241,0.1) !important;
+    border-color : #6366f1 !important;
+    color        : #f1f5f9 !important;
 }
 
 /* ── Chat title ── */
 .main-title {
-    text-align: center;
-    color: #f1f5f9 !important;
-    font-size: 24px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    margin-bottom: 1rem;
+    text-align     : center;
+    color          : #f1f5f9 !important;
+    font-size      : 24px;
+    font-weight    : 600;
+    letter-spacing : -0.02em;
+    margin-bottom  : 1rem;
 }
+
+/* ── Alerts ── */
+div[data-testid="stAlert"] { border-radius: 10px !important; font-size: 13px !important; }
 
 </style>
 """, unsafe_allow_html=True)
@@ -136,22 +149,23 @@ firebase = pyrebase.initialize_app(firebase_config)
 auth = firebase.auth()
 
 # ---------------- SESSION STATE ---------------- #
-if "user"      not in st.session_state: st.session_state.user      = None
-if "auth_tab"  not in st.session_state: st.session_state.auth_tab  = "login"
+if "user"     not in st.session_state: st.session_state.user     = None
+if "auth_tab" not in st.session_state: st.session_state.auth_tab = "login"
 
 # ================================================ #
-# ────────────── LOGIN / SIGNUP UI ─────────────── #
+# ─────────────── LOGIN / SIGNUP UI ──────────────  #
 # ================================================ #
 if st.session_state.user is None:
 
-    _, center, _ = st.columns([1, 1.4, 1])
+    # Single level of columns — NO nesting inside center
+    _, center, _ = st.columns([1, 1.3, 1])
 
     with center:
 
-        # ── Brand row (pure HTML, no widget) ──
+        # ── Brand (pure HTML, no widget) ──
         st.markdown("""
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.5rem;">
-            <div style="width:38px;height:38px;background:#6366f1;border-radius:10px;
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.75rem;">
+            <div style="width:40px;height:40px;background:#6366f1;border-radius:10px;
                         display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
                      stroke="white" stroke-width="2.5" stroke-linecap="round">
@@ -165,51 +179,49 @@ if st.session_state.user is None:
         </div>
         """, unsafe_allow_html=True)
 
-        # ── Heading (pure HTML) ──
+        # ── Heading ──
         if st.session_state.auth_tab == "login":
             st.markdown("""
-            <p style="font-size:26px;font-weight:700;color:#f1f5f9;
-                      margin:0 0 4px;letter-spacing:-0.03em;">Welcome back</p>
+            <p style="font-size:28px;font-weight:700;color:#f1f5f9;
+                      margin:0 0 6px;letter-spacing:-0.03em;">Welcome back</p>
             <p style="font-size:14px;color:#64748b;margin:0 0 1.5rem;">
                 Sign in to your account to continue</p>
             """, unsafe_allow_html=True)
         else:
             st.markdown("""
-            <p style="font-size:26px;font-weight:700;color:#f1f5f9;
-                      margin:0 0 4px;letter-spacing:-0.03em;">Create an account</p>
+            <p style="font-size:28px;font-weight:700;color:#f1f5f9;
+                      margin:0 0 6px;letter-spacing:-0.03em;">Create an account</p>
             <p style="font-size:14px;color:#64748b;margin:0 0 1.5rem;">
                 Get started with Multi-Agent AI today</p>
             """, unsafe_allow_html=True)
 
-        # ── Tab switcher (Streamlit buttons) ──
-        tc1, tc2 = st.columns(2)
-        with tc1:
-            if st.button("Sign in", use_container_width=True, key="tab_login",
-                         type="primary" if st.session_state.auth_tab == "login" else "secondary"):
-                st.session_state.auth_tab = "login"
-                st.rerun()
-        with tc2:
-            if st.button("Create account", use_container_width=True, key="tab_signup",
-                         type="primary" if st.session_state.auth_tab == "signup" else "secondary"):
-                st.session_state.auth_tab = "signup"
-                st.rerun()
+        # ── Tab switcher via st.radio (NO nested columns!) ──
+        tab_choice = st.radio(
+            "",
+            options=["Sign in", "Create account"],
+            index=0 if st.session_state.auth_tab == "login" else 1,
+            horizontal=True,
+            key="auth_radio",
+            label_visibility="collapsed"
+        )
+        st.session_state.auth_tab = "login" if tab_choice == "Sign in" else "signup"
 
-        # ── Divider ──
+        # ── Thin separator ──
         st.markdown("""
         <div style="height:0.5px;background:rgba(255,255,255,0.07);margin:1.25rem 0;"></div>
         """, unsafe_allow_html=True)
 
-        # ── Input fields (Streamlit widgets — inside the same column = inside card) ──
-        email    = st.text_input("Email address", placeholder="you@example.com",  key="auth_email")
-        password = st.text_input("Password",      placeholder="Enter your password",
+        # ── Fields ──
+        email    = st.text_input("Email address", placeholder="you@example.com",
+                                 key="auth_email")
+        password = st.text_input("Password", placeholder="Enter your password",
                                  type="password", key="auth_password")
 
         st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
 
         # ── Action button ──
         if st.session_state.auth_tab == "login":
-            if st.button("Sign in to workspace", use_container_width=True,
-                         type="primary", key="btn_login"):
+            if st.button("Sign in to workspace", use_container_width=True, key="btn_login"):
                 try:
                     user = auth.sign_in_with_email_and_password(email, password)
                     st.session_state.user = user
@@ -217,8 +229,7 @@ if st.session_state.user is None:
                 except:
                     st.error("Invalid email or password. Please try again.")
         else:
-            if st.button("Create account", use_container_width=True,
-                         type="primary", key="btn_signup"):
+            if st.button("Create account", use_container_width=True, key="btn_signup"):
                 try:
                     auth.create_user_with_email_and_password(email, password)
                     st.success("Account created! You can now sign in.")
@@ -227,9 +238,10 @@ if st.session_state.user is None:
                 except:
                     st.error("Signup failed. This email may already be registered.")
 
-        # ── Footer note ──
+        # ── Footer ──
         st.markdown("""
-        <p style="text-align:center;font-size:12px;color:#334155;margin-top:1rem;margin-bottom:0;">
+        <p style="text-align:center;font-size:12px;color:#334155;
+                  margin-top:1.25rem;margin-bottom:0;">
             Protected by end-to-end encryption
         </p>
         """, unsafe_allow_html=True)
@@ -297,7 +309,7 @@ for user_msg, bot_msg in chat_history:
 
 user_input = st.chat_input("Ask something...")
 if user_input:
-    temp_mode  = "short" if "short" in user_input.lower() else \
+    temp_mode  = "short"    if "short"  in user_input.lower() else \
                  "detailed" if "detail" in user_input.lower() else None
     final_mode = temp_mode if temp_mode else mode_selected
 
@@ -306,7 +318,6 @@ if user_input:
 
     with st.chat_message("user"):
         st.markdown(user_input)
-
     with st.spinner("Thinking..."):
         result = multi_agent_system(user_input, chat_history, final_mode)
 
