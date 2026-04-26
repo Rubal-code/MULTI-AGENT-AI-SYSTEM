@@ -19,162 +19,160 @@ st.set_page_config(page_title="Multi-Agent AI", layout="wide")
 st.markdown("""
 <style>
 
-/* ── Global Background ── */
+/* Global background */
 .stApp {
-    background: #0f172a;
+    background: #0f172a !important;
 }
 
-/* ── Hide Streamlit chrome on login ── */
-header[data-testid="stHeader"],
-footer { visibility: hidden; }
+/* Hide default Streamlit header/footer */
+header[data-testid="stHeader"] { display: none; }
+footer { display: none; }
 
-/* ── Login card wrapper ── */
-.auth-card {
-    max-width: 420px;
-    margin: 80px auto 0;
+/* ── Auth page: center the middle column & give it a card look ── */
+div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {
+    background: transparent;
+}
+
+/* Target the auth form container via its block class */
+.auth-wrapper {
     background: #1e293b;
     border: 0.5px solid rgba(255,255,255,0.08);
     border-radius: 16px;
-    padding: 2.5rem;
+    padding: 2.5rem 2rem;
+    margin-top: 60px;
 }
 
-/* ── Brand row ── */
-.auth-brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 1.75rem;
-}
-.auth-brand-icon {
-    width: 34px;
-    height: 34px;
-    background: #6366f1;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.auth-brand-name {
-    font-size: 15px;
-    font-weight: 600;
-    color: #f1f5f9;
-    letter-spacing: -0.01em;
-}
-
-/* ── Heading ── */
+/* All text inside auth area */
 .auth-heading {
     font-size: 22px;
     font-weight: 600;
     color: #f1f5f9;
-    margin: 0 0 4px;
+    margin: 0 0 4px 0;
     letter-spacing: -0.02em;
 }
 .auth-subheading {
     font-size: 14px;
     color: #64748b;
-    margin: 0 0 1.75rem;
+    margin: 0 0 1.5rem 0;
 }
-
-/* ── Tab switcher ── */
-.auth-tabs {
+.auth-brand {
     display: flex;
-    gap: 4px;
-    background: #0f172a;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+}
+.auth-brand-icon {
+    width: 34px; height: 34px;
+    background: #6366f1;
     border-radius: 8px;
-    padding: 3px;
-    margin-bottom: 1.75rem;
+    display: flex; align-items: center; justify-content: center;
+}
+.auth-brand-name {
+    font-size: 15px; font-weight: 600;
+    color: #f1f5f9; letter-spacing: -0.01em;
+}
+.auth-divider {
+    height: 0.5px;
+    background: rgba(255,255,255,0.07);
+    margin: 0.5rem 0 1.25rem 0;
+}
+.auth-footer {
+    text-align: center;
+    font-size: 12px;
+    color: #334155;
+    margin-top: 1rem;
 }
 
-/* ── Field labels ── */
-.auth-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #64748b;
-    margin-bottom: 6px;
-    display: block;
-}
-
-/* ── Input styling ── */
-.stTextInput > div > div > input {
-    background: #0f172a !important;
-    border: 0.5px solid rgba(255,255,255,0.1) !important;
-    border-radius: 8px !important;
-    color: #f1f5f9 !important;
-    padding: 10px 12px !important;
-    font-size: 14px !important;
-}
-.stTextInput > div > div > input:focus {
-    border-color: #6366f1 !important;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.15) !important;
-}
+/* ── Input fields ── */
 .stTextInput > label {
     font-size: 11px !important;
     font-weight: 600 !important;
     letter-spacing: 0.06em !important;
     text-transform: uppercase !important;
     color: #64748b !important;
+    margin-bottom: 4px !important;
+}
+.stTextInput > div > div > input {
+    background: #0f172a !important;
+    border: 0.5px solid rgba(255,255,255,0.1) !important;
+    border-radius: 8px !important;
+    color: #f1f5f9 !important;
+    font-size: 14px !important;
+    padding: 10px 12px !important;
+    height: 42px !important;
+}
+.stTextInput > div > div > input:focus {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.15) !important;
 }
 
-/* ── Primary button ── */
+/* ── Buttons ── */
 .stButton > button {
     width: 100%;
     height: 42px;
     border-radius: 8px !important;
     font-size: 14px !important;
     font-weight: 500 !important;
-    letter-spacing: 0.01em !important;
+    border: none !important;
+    transition: background 0.15s ease !important;
+}
+
+/* Primary (active tab / submit) */
+button[kind="primary"] {
     background: #6366f1 !important;
     color: white !important;
-    border: none !important;
-    transition: background 0.15s;
 }
-.stButton > button:hover {
+button[kind="primary"]:hover {
     background: #4f46e5 !important;
 }
 
-/* ── Divider ── */
-.auth-divider {
-    height: 0.5px;
-    background: rgba(255,255,255,0.07);
-    margin: 1.5rem 0;
+/* Secondary (inactive tab) */
+button[kind="secondary"] {
+    background: transparent !important;
+    border: 0.5px solid rgba(255,255,255,0.1) !important;
+    color: #64748b !important;
+}
+button[kind="secondary"]:hover {
+    background: rgba(255,255,255,0.04) !important;
+    color: #f1f5f9 !important;
 }
 
-/* ── Footer note ── */
-.auth-footer {
-    text-align: center;
-    font-size: 12px;
-    color: #334155;
-    margin-top: 1.25rem;
-}
-
-/* ── Main chat title ── */
-.main-title {
-    text-align: center;
-    color: #f1f5f9;
-    font-size: 26px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    margin-bottom: 0.25rem;
-}
+/* ── Alerts ── */
+.stAlert { border-radius: 8px !important; font-size: 14px !important; }
 
 /* ── Sidebar ── */
 section[data-testid="stSidebar"] {
-    background: #1e293b;
-    border-right: 0.5px solid rgba(255,255,255,0.06);
+    background: #1e293b !important;
+    border-right: 0.5px solid rgba(255,255,255,0.06) !important;
 }
 section[data-testid="stSidebar"] .stButton > button {
     background: transparent !important;
-    border: 0.5px solid rgba(255,255,255,0.1) !important;
+    border: 0.5px solid rgba(255,255,255,0.08) !important;
     color: #cbd5e1 !important;
     text-align: left !important;
     justify-content: flex-start !important;
     font-weight: 400 !important;
 }
 section[data-testid="stSidebar"] .stButton > button:hover {
-    background: rgba(99,102,241,0.08) !important;
+    background: rgba(99,102,241,0.1) !important;
     border-color: #6366f1 !important;
+    color: #f1f5f9 !important;
+}
+
+/* ── Main chat title ── */
+.main-title {
+    text-align: center;
+    color: #f1f5f9 !important;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+/* ── Chat messages ── */
+.stChatMessage {
+    background: #1e293b !important;
+    border: 0.5px solid rgba(255,255,255,0.06) !important;
+    border-radius: 12px !important;
 }
 
 </style>
@@ -185,85 +183,91 @@ firebase_config = dict(st.secrets["firebase_web"])
 firebase = pyrebase.initialize_app(firebase_config)
 auth = firebase.auth()
 
-# ---------------- SESSION ---------------- #
+# ---------------- SESSION STATE ---------------- #
 if "user" not in st.session_state:
     st.session_state.user = None
-
 if "auth_tab" not in st.session_state:
-    st.session_state.auth_tab = "login"   # "login" | "signup"
+    st.session_state.auth_tab = "login"
 
-# ---------------- LOGIN UI ---------------- #
+# ================================================ #
+# ---------------- LOGIN / SIGNUP UI ------------- #
+# ================================================ #
 if st.session_state.user is None:
 
-    st.markdown('<div class="auth-card">', unsafe_allow_html=True)
+    # Three-column layout → card lives in the middle column
+    left, center, right = st.columns([1, 1.6, 1])
 
-    # Brand
-    st.markdown("""
-    <div class="auth-brand">
-        <div class="auth-brand-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                 stroke="white" stroke-width="2.5" stroke-linecap="round">
-                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
-            </svg>
+    with center:
+        # ── Brand ──
+        st.markdown("""
+        <div class="auth-wrapper">
+        <div class="auth-brand">
+            <div class="auth-brand-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                     stroke="white" stroke-width="2.5" stroke-linecap="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+            </div>
+            <span class="auth-brand-name">Multi-Agent AI</span>
         </div>
-        <span class="auth-brand-name">Multi-Agent AI</span>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
-    # Heading
-    if st.session_state.auth_tab == "login":
-        st.markdown('<p class="auth-heading">Welcome back</p>', unsafe_allow_html=True)
-        st.markdown('<p class="auth-subheading">Sign in to continue to your workspace</p>', unsafe_allow_html=True)
-    else:
-        st.markdown('<p class="auth-heading">Create an account</p>', unsafe_allow_html=True)
-        st.markdown('<p class="auth-subheading">Get started with Multi-Agent AI today</p>', unsafe_allow_html=True)
+        # ── Heading ──
+        if st.session_state.auth_tab == "login":
+            st.markdown('<p class="auth-heading">Welcome back</p>', unsafe_allow_html=True)
+            st.markdown('<p class="auth-subheading">Sign in to continue to your workspace</p>', unsafe_allow_html=True)
+        else:
+            st.markdown('<p class="auth-heading">Create an account</p>', unsafe_allow_html=True)
+            st.markdown('<p class="auth-subheading">Get started with Multi-Agent AI today</p>', unsafe_allow_html=True)
 
-    # Tab switcher
-    col_login, col_signup = st.columns(2)
-    with col_login:
-        if st.button("Sign in", use_container_width=True,
-                     type="primary" if st.session_state.auth_tab == "login" else "secondary"):
-            st.session_state.auth_tab = "login"
-            st.rerun()
-    with col_signup:
-        if st.button("Create account", use_container_width=True,
-                     type="primary" if st.session_state.auth_tab == "signup" else "secondary"):
-            st.session_state.auth_tab = "signup"
-            st.rerun()
-
-    st.markdown('<div class="auth-divider"></div>', unsafe_allow_html=True)
-
-    # Fields
-    email    = st.text_input("Email address", placeholder="you@example.com")
-    password = st.text_input("Password", type="password",
-                             placeholder="Enter your password")
-
-    st.markdown("")  # spacing
-
-    # Action button
-    if st.session_state.auth_tab == "login":
-        if st.button("Sign in to workspace", use_container_width=True):
-            try:
-                user = auth.sign_in_with_email_and_password(email, password)
-                st.session_state.user = user
-                st.success("Signed in successfully.")
-                st.rerun()
-            except:
-                st.error("Invalid email or password. Please try again.")
-
-    else:
-        if st.button("Create account", use_container_width=True):
-            try:
-                auth.create_user_with_email_and_password(email, password)
-                st.success("Account created! You can now sign in.")
+        # ── Tab switcher ──
+        t1, t2 = st.columns(2)
+        with t1:
+            if st.button("Sign in", use_container_width=True,
+                         type="primary" if st.session_state.auth_tab == "login" else "secondary",
+                         key="tab_login"):
                 st.session_state.auth_tab = "login"
                 st.rerun()
-            except:
-                st.error("Signup failed. The email may already be in use.")
+        with t2:
+            if st.button("Create account", use_container_width=True,
+                         type="primary" if st.session_state.auth_tab == "signup" else "secondary",
+                         key="tab_signup"):
+                st.session_state.auth_tab = "signup"
+                st.rerun()
 
-    st.markdown('<p class="auth-footer">Protected by end-to-end encryption</p>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('<div class="auth-divider"></div>', unsafe_allow_html=True)
+
+        # ── Fields ──
+        email    = st.text_input("Email address", placeholder="you@example.com", key="auth_email")
+        password = st.text_input("Password", type="password",
+                                 placeholder="Enter your password", key="auth_password")
+
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+        # ── Action button ──
+        if st.session_state.auth_tab == "login":
+            if st.button("Sign in to workspace", use_container_width=True,
+                         type="primary", key="btn_login"):
+                try:
+                    user = auth.sign_in_with_email_and_password(email, password)
+                    st.session_state.user = user
+                    st.rerun()
+                except:
+                    st.error("Invalid email or password. Please try again.")
+        else:
+            if st.button("Create account", use_container_width=True,
+                         type="primary", key="btn_signup"):
+                try:
+                    auth.create_user_with_email_and_password(email, password)
+                    st.success("Account created! You can now sign in.")
+                    st.session_state.auth_tab = "login"
+                    st.rerun()
+                except:
+                    st.error("Signup failed. The email may already be in use.")
+
+        st.markdown('<p class="auth-footer">Protected by end-to-end encryption</p>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)  # close auth-wrapper
 
     st.stop()
 
@@ -274,18 +278,14 @@ user_id = st.session_state.user["localId"]
 with st.sidebar:
     st.markdown("### 💬 Chats")
     st.caption(f"Signed in as **{st.session_state.user['email']}**")
-    st.markdown("---")
+    st.divider()
 
     if st.button("🚪 Sign out", use_container_width=True):
         st.session_state.user = None
         st.rerun()
 
     search_query = st.text_input("🔍 Search chats", placeholder="Search...")
-
-    mode_selected = st.selectbox(
-        "Response mode",
-        ["normal", "short", "detailed"]
-    )
+    mode_selected = st.selectbox("Response mode", ["normal", "short", "detailed"])
 
     if st.button("＋ New Chat", use_container_width=True):
         st.session_state.session_id = str(uuid.uuid4())
@@ -293,7 +293,7 @@ with st.sidebar:
         st.session_state.editing_chat = None
         st.rerun()
 
-    st.markdown("---")
+    st.divider()
     sessions = get_all_sessions(user_id)
 
     for session_id, title in sessions:
@@ -325,7 +325,7 @@ if "chat_title" not in st.session_state:
 if "editing_chat" not in st.session_state:
     st.session_state.editing_chat = None
 
-# ---------------- MAIN UI ---------------- #
+# ---------------- MAIN CHAT UI ---------------- #
 st.markdown("<h1 class='main-title'>Multi-Agent AI</h1>", unsafe_allow_html=True)
 
 chat_history = get_chats(user_id, st.session_state.session_id)
@@ -336,7 +336,6 @@ for user_msg, bot_msg in chat_history:
     with st.chat_message("assistant"):
         st.markdown(bot_msg)
 
-# ---------------- INPUT ---------------- #
 user_input = st.chat_input("Ask something...")
 
 if user_input:
@@ -357,7 +356,7 @@ if user_input:
         result = multi_agent_system(user_input, chat_history, final_mode)
 
     final_response = result["response"]
-    agent_used     = result["agent"]
+    agent_used = result["agent"]
 
     with st.chat_message("assistant"):
         placeholder = st.empty()
