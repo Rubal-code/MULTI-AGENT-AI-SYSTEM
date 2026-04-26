@@ -12,24 +12,90 @@ import pyrebase
 from app.core.orchestrator import multi_agent_system, generate_title
 from app.core.database import save_chat, get_chats, get_all_sessions, rename_chat, delete_chat
 
+# ---------------- PAGE CONFIG ---------------- #
+st.set_page_config(page_title="Multi-Agent AI", layout="wide")
+
+# ---------------- CUSTOM CSS ---------------- #
+st.markdown("""
+<style>
+
+/* Background */
+.stApp {
+    background: linear-gradient(135deg, #0f172a, #020617);
+}
+
+/* Center Login Box */
+.login-container {
+    max-width: 450px;
+    margin: auto;
+    margin-top: 120px;
+    padding: 35px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+}
+
+/* Title */
+.login-title {
+    text-align: center;
+    font-size: 30px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 25px;
+}
+
+/* Input fields */
+.stTextInput>div>div>input {
+    background-color: rgba(255,255,255,0.08);
+    color: white;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+/* Buttons */
+.stButton>button {
+    width: 100%;
+    border-radius: 10px;
+    height: 45px;
+    font-weight: bold;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    color: white;
+    border: none;
+}
+
+/* Signup secondary button */
+.signup-btn button {
+    background: transparent !important;
+    border: 1px solid #8b5cf6 !important;
+}
+
+/* Chat title */
+.main-title {
+    text-align: center;
+    color: white;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # ---------------- FIREBASE AUTH ---------------- #
 firebase_config = dict(st.secrets["firebase_web"])
-
 firebase = pyrebase.initialize_app(firebase_config)
 auth = firebase.auth()
 
-# Session
+# ---------------- SESSION ---------------- #
 if "user" not in st.session_state:
     st.session_state.user = None
 
 # ---------------- LOGIN UI ---------------- #
 if st.session_state.user is None:
 
-    st.title("🔐 Login / Signup")
+    st.markdown('<div class="login-container">', unsafe_allow_html=True)
+    st.markdown('<div class="login-title">🔐 Login / Signup</div>', unsafe_allow_html=True)
 
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
+    email = st.text_input("Email", placeholder="Enter your email")
+    password = st.text_input("Password", type="password", placeholder="Enter your password")
 
     col1, col2 = st.columns(2)
 
@@ -46,47 +112,30 @@ if st.session_state.user is None:
 
     # SIGNUP
     with col2:
+        st.markdown('<div class="signup-btn">', unsafe_allow_html=True)
         if st.button("Signup"):
             try:
                 auth.create_user_with_email_and_password(email, password)
                 st.success("Account created! Please login.")
             except:
                 st.error("Signup failed")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
     st.stop()
 
-
-# ✅ REAL USER ID
+# ---------------- USER INFO ---------------- #
 user_id = st.session_state.user["localId"]
-
-
-# ---------------- LOGOUT ---------------- #
-with st.sidebar:
-    if st.button("🚪 Logout"):
-        st.session_state.user = None
-        st.rerun()
-
-
-# ---------------- PAGE CONFIG ---------------- #
-st.set_page_config(page_title="Multi-Agent AI", layout="wide")
-
-
-# ---------------- SESSION ---------------- #
-if "session_id" not in st.session_state:
-    st.session_state.session_id = str(uuid.uuid4())
-
-if "chat_title" not in st.session_state:
-    st.session_state.chat_title = "New Chat"
-
-if "editing_chat" not in st.session_state:
-    st.session_state.editing_chat = None
-
 
 # ---------------- SIDEBAR ---------------- #
 with st.sidebar:
-    st.title(f"💬 Chats")
-
+    st.title("💬 Chats")
     st.write(f"👤 {st.session_state.user['email']}")
+
+    if st.button("🚪 Logout"):
+        st.session_state.user = None
+        st.rerun()
 
     search_query = st.text_input("🔍 Search chats")
 
@@ -110,22 +159,18 @@ with st.sidebar:
 
             col1, col2, col3 = st.columns([3,1,1])
 
-            # OPEN CHAT
             if col1.button(title_display, key=session_id):
                 st.session_state.session_id = session_id
                 st.session_state.chat_title = title_display
                 st.rerun()
 
-            # EDIT
             if col2.button("✏️", key=f"edit_{session_id}"):
                 st.session_state.editing_chat = session_id
 
-            # DELETE
             if col3.button("🗑️", key=f"delete_{session_id}"):
                 delete_chat(user_id, session_id)
                 st.rerun()
 
-            # RENAME UI
             if st.session_state.editing_chat == session_id:
                 new_title = st.text_input(
                     "Rename chat",
@@ -138,9 +183,18 @@ with st.sidebar:
                     st.session_state.editing_chat = None
                     st.rerun()
 
+# ---------------- SESSION INIT ---------------- #
+if "session_id" not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())
 
-# ---------------- MAIN ---------------- #
-st.markdown("<h1 style='text-align:center;'>🤖 Multi-Agent AI</h1>", unsafe_allow_html=True)
+if "chat_title" not in st.session_state:
+    st.session_state.chat_title = "New Chat"
+
+if "editing_chat" not in st.session_state:
+    st.session_state.editing_chat = None
+
+# ---------------- MAIN UI ---------------- #
+st.markdown("<h1 class='main-title'>🤖 Multi-Agent AI</h1>", unsafe_allow_html=True)
 
 chat_history = get_chats(user_id, st.session_state.session_id)
 
@@ -149,7 +203,6 @@ for user, bot in chat_history:
         st.markdown(user)
     with st.chat_message("assistant"):
         st.markdown(bot)
-
 
 # ---------------- INPUT ---------------- #
 user_input = st.chat_input("Ask something...")
@@ -165,7 +218,6 @@ if user_input:
 
     final_mode = temp_mode if temp_mode else mode_selected
 
-    # Generate title
     if st.session_state.chat_title == "New Chat":
         st.session_state.chat_title = generate_title(user_input)
 
