@@ -6,3 +6,5 @@ langchain-groq
 langgraph
 python-dotenv
 groq
+streamlit-authenticator
+pyrebase4

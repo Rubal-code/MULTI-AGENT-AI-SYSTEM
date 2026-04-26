@@ -1,10 +1,8 @@
 import sys
 import os
 
-#  FORCE ROOT PATH
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT_DIR)
-
 
 import streamlit as st
 import uuid
@@ -12,6 +10,21 @@ import time
 
 from app.core.orchestrator import multi_agent_system, generate_title
 from app.core.database import save_chat, get_chats, get_all_sessions, rename_chat, delete_chat
+
+
+# ---------------- LOGIN ---------------- #
+if "user_id" not in st.session_state:
+    st.session_state.user_id = None
+
+if st.session_state.user_id is None:
+    username = st.text_input("Enter your username")
+    if st.button("Login"):
+        if username.strip():
+            st.session_state.user_id = username.strip()
+            st.rerun()
+        else:
+            st.warning("Enter valid username")
+    st.stop()
 
 
 st.set_page_config(page_title="Multi-Agent AI", layout="wide")
@@ -30,7 +43,7 @@ if "editing_chat" not in st.session_state:
 
 # ---------------- SIDEBAR ---------------- #
 with st.sidebar:
-    st.title("💬 Chats")
+    st.title(f"💬 Chats ({st.session_state.user_id})")
 
     search_query = st.text_input("🔍 Search chats")
 
@@ -45,7 +58,7 @@ with st.sidebar:
         st.session_state.editing_chat = None
         st.rerun()
 
-    sessions = get_all_sessions()
+    sessions = get_all_sessions(st.session_state.user_id)
 
     for session_id, title in sessions:
         title_display = title if title else session_id[:8]
@@ -54,23 +67,46 @@ with st.sidebar:
 
             col1, col2, col3 = st.columns([3,1,1])
 
+            # OPEN CHAT
             if col1.button(title_display, key=session_id):
                 st.session_state.session_id = session_id
                 st.session_state.chat_title = title_display
                 st.rerun()
 
+            # EDIT BUTTON
             if col2.button("✏️", key=f"edit_{session_id}"):
                 st.session_state.editing_chat = session_id
 
+            # DELETE BUTTON
             if col3.button("🗑️", key=f"delete_{session_id}"):
-                delete_chat(session_id)
+                delete_chat(st.session_state.user_id, session_id)
                 st.rerun()
+
+            # RENAME UI
+            if st.session_state.editing_chat == session_id:
+                new_title = st.text_input(
+                    "Rename chat",
+                    value=title_display,
+                    key=f"rename_input_{session_id}"
+                )
+
+                if st.button("Save", key=f"save_{session_id}"):
+                    rename_chat(
+                        st.session_state.user_id,
+                        session_id,
+                        new_title
+                    )
+                    st.session_state.editing_chat = None
+                    st.rerun()
 
 
 # ---------------- MAIN ---------------- #
 st.markdown("<h1 style='text-align:center;'>🤖 Multi-Agent AI</h1>", unsafe_allow_html=True)
 
-chat_history = get_chats(st.session_state.session_id)
+chat_history = get_chats(
+    st.session_state.user_id,
+    st.session_state.session_id
+)
 
 for user, bot in chat_history:
     with st.chat_message("user"):
@@ -84,27 +120,21 @@ user_input = st.chat_input("Ask something...")
 
 if user_input:
 
-    # 🔥 TEMP MODE (NO STICKY MEMORY)
     temp_mode = None
 
     if "short" in user_input.lower():
         temp_mode = "short"
-
-    elif "detail" in user_input.lower() or "explain more" in user_input.lower():
+    elif "detail" in user_input.lower():
         temp_mode = "detailed"
 
-    # 🔥 FINAL MODE DECISION
     final_mode = temp_mode if temp_mode else mode_selected
 
-    # 🔥 Title
     if st.session_state.chat_title == "New Chat":
         st.session_state.chat_title = generate_title(user_input)
 
-    # Show user
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    # AI response
     with st.spinner("Thinking..."):
         result = multi_agent_system(
             user_input,
@@ -115,7 +145,6 @@ if user_input:
     final_response = result["response"]
     agent_used = result["agent"]
 
-    # Streaming
     with st.chat_message("assistant"):
         placeholder = st.empty()
         text = ""
@@ -128,6 +157,7 @@ if user_input:
         st.markdown(f"🧠 **Agent:** `{agent_used}`")
 
     save_chat(
+        st.session_state.user_id,
         st.session_state.session_id,
         st.session_state.chat_title,
         user_input,
