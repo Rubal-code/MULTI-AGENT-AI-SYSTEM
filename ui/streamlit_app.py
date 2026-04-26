@@ -7,26 +7,67 @@ sys.path.insert(0, ROOT_DIR)
 import streamlit as st
 import uuid
 import time
+import pyrebase
 
 from app.core.orchestrator import multi_agent_system, generate_title
 from app.core.database import save_chat, get_chats, get_all_sessions, rename_chat, delete_chat
 
 
-# ---------------- LOGIN ---------------- #
-if "user_id" not in st.session_state:
-    st.session_state.user_id = None
+# ---------------- FIREBASE AUTH ---------------- #
+firebase_config = dict(st.secrets["firebase_web"])
 
-if st.session_state.user_id is None:
-    username = st.text_input("Enter your username")
-    if st.button("Login"):
-        if username.strip():
-            st.session_state.user_id = username.strip()
-            st.rerun()
-        else:
-            st.warning("Enter valid username")
+firebase = pyrebase.initialize_app(firebase_config)
+auth = firebase.auth()
+
+# Session
+if "user" not in st.session_state:
+    st.session_state.user = None
+
+# ---------------- LOGIN UI ---------------- #
+if st.session_state.user is None:
+
+    st.title("🔐 Login / Signup")
+
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
+
+    col1, col2 = st.columns(2)
+
+    # LOGIN
+    with col1:
+        if st.button("Login"):
+            try:
+                user = auth.sign_in_with_email_and_password(email, password)
+                st.session_state.user = user
+                st.success("Logged in successfully")
+                st.rerun()
+            except:
+                st.error("Invalid email or password")
+
+    # SIGNUP
+    with col2:
+        if st.button("Signup"):
+            try:
+                auth.create_user_with_email_and_password(email, password)
+                st.success("Account created! Please login.")
+            except:
+                st.error("Signup failed")
+
     st.stop()
 
 
+# ✅ REAL USER ID
+user_id = st.session_state.user["localId"]
+
+
+# ---------------- LOGOUT ---------------- #
+with st.sidebar:
+    if st.button("🚪 Logout"):
+        st.session_state.user = None
+        st.rerun()
+
+
+# ---------------- PAGE CONFIG ---------------- #
 st.set_page_config(page_title="Multi-Agent AI", layout="wide")
 
 
@@ -43,7 +84,9 @@ if "editing_chat" not in st.session_state:
 
 # ---------------- SIDEBAR ---------------- #
 with st.sidebar:
-    st.title(f"💬 Chats ({st.session_state.user_id})")
+    st.title(f"💬 Chats")
+
+    st.write(f"👤 {st.session_state.user['email']}")
 
     search_query = st.text_input("🔍 Search chats")
 
@@ -58,7 +101,7 @@ with st.sidebar:
         st.session_state.editing_chat = None
         st.rerun()
 
-    sessions = get_all_sessions(st.session_state.user_id)
+    sessions = get_all_sessions(user_id)
 
     for session_id, title in sessions:
         title_display = title if title else session_id[:8]
@@ -73,13 +116,13 @@ with st.sidebar:
                 st.session_state.chat_title = title_display
                 st.rerun()
 
-            # EDIT BUTTON
+            # EDIT
             if col2.button("✏️", key=f"edit_{session_id}"):
                 st.session_state.editing_chat = session_id
 
-            # DELETE BUTTON
+            # DELETE
             if col3.button("🗑️", key=f"delete_{session_id}"):
-                delete_chat(st.session_state.user_id, session_id)
+                delete_chat(user_id, session_id)
                 st.rerun()
 
             # RENAME UI
@@ -91,11 +134,7 @@ with st.sidebar:
                 )
 
                 if st.button("Save", key=f"save_{session_id}"):
-                    rename_chat(
-                        st.session_state.user_id,
-                        session_id,
-                        new_title
-                    )
+                    rename_chat(user_id, session_id, new_title)
                     st.session_state.editing_chat = None
                     st.rerun()
 
@@ -103,10 +142,7 @@ with st.sidebar:
 # ---------------- MAIN ---------------- #
 st.markdown("<h1 style='text-align:center;'>🤖 Multi-Agent AI</h1>", unsafe_allow_html=True)
 
-chat_history = get_chats(
-    st.session_state.user_id,
-    st.session_state.session_id
-)
+chat_history = get_chats(user_id, st.session_state.session_id)
 
 for user, bot in chat_history:
     with st.chat_message("user"):
@@ -129,6 +165,7 @@ if user_input:
 
     final_mode = temp_mode if temp_mode else mode_selected
 
+    # Generate title
     if st.session_state.chat_title == "New Chat":
         st.session_state.chat_title = generate_title(user_input)
 
@@ -156,8 +193,9 @@ if user_input:
 
         st.markdown(f"🧠 **Agent:** `{agent_used}`")
 
+    # SAVE CHAT
     save_chat(
-        st.session_state.user_id,
+        user_id,
         st.session_state.session_id,
         st.session_state.chat_title,
         user_input,
